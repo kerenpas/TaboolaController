@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">TaboolaController</string>
+    <string name="position_hint">Position (0-100)</string>
+    <string name="color_hint">Color Hex (e.g., #FF5722)</string>
+    <string name="send_button">Send Color Update</string>
+    <string name="connection_status">Connection Status</string>
+    <string name="status">Status</string>
+    <string name="visibility_label">Cell Visible</string>
+    <string name="connect_button">Connect</string>
+    <string name="disconnect_button">Disconnect</string>
+</resources>
