@@ -43,7 +43,6 @@ class MainActivity : AppCompatActivity() {
             cellColorService = null
             isServiceBound = false
             updateConnectionStatus("Disconnected from Display App")
-            binding.btnSend.isEnabled = false
         }
     }
 
@@ -114,16 +113,69 @@ class MainActivity : AppCompatActivity() {
                 isServiceBound = false
                 cellColorService = null
                 updateConnectionStatus("Disconnected")
-                binding.btnSend.isEnabled = false
             } catch (e: Exception) {
                 Log.e(TAG, "Error unbinding service", e)
             }
         }
     }
 
+    private fun updateCellColorViaProvider(position: Int, colorHex: String, isVisible: Boolean) {
+        val colorInt = try {
+            Color.parseColor(colorHex)
+        } catch (e: IllegalArgumentException) {
+            showError("Invalid color format. Use #RRGGBB format (e.g., #FF5722)")
+            return
+        }
+
+        val values = android.content.ContentValues().apply {
+            put("position", position)
+            put("color", colorInt)
+            put("isVisible", isVisible)
+            put("security_token", SECURITY_TOKEN)
+        }
+        val uri = android.net.Uri.parse("content://com.example.tabooladisplayapp.cellcolorprovider/cellColor/${position.toString()}")
+        try {
+            val rows = contentResolver.update(uri, values, null, null)
+            if (rows > 0) {
+                showSuccess("Cell $position updated via ContentProvider!")
+            } else {
+                showError("No cell updated. Check Display App logs and permissions.")
+            }
+        } catch (e: Exception) {
+            showError("ContentProvider update failed: ${e.message}")
+        }
+    }
+
     private fun sendColorUpdate() {
         if (!isServiceBound || cellColorService == null) {
-            showError("Not connected to Display App")
+            // Service not bound, use ContentProvider
+            val positionText = binding.etPosition.text.toString().trim()
+            val colorHex = binding.etColorHex.text.toString().trim()
+            val isVisible = binding.switchVisibility.isChecked
+
+            if (TextUtils.isEmpty(positionText)) {
+                showError("Please enter a position")
+                return
+            }
+
+            val position = try {
+                positionText.toInt()
+            } catch (e: NumberFormatException) {
+                showError("Invalid position. Please enter a number between 0-100")
+                return
+            }
+
+            if (position < 0 || position > 100) {
+                showError("Position must be between 0 and 100")
+                return
+            }
+
+            if (!isValidHexColor(colorHex)) {
+                showError("Invalid color format. Use #RRGGBB format (e.g., #FF5722)")
+                return
+            }
+
+            updateCellColorViaProvider(position, colorHex, isVisible)
             return
         }
 
